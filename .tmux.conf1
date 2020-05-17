@@ -1,0 +1,240 @@
+# Changes to this file aren't read by tmux automatically,
+# compleletely close the tmux sesssion and reopen it or
+# ~PREFIX :~ to open command mode and type "source-file ~/.tmux.conf" or
+# "tsr" in terminal which is an alias in ~/.fishrc or use binding `M-c r` to make it work
+#
+# from FAQ file in tmux source code:
+# to see the default session options by starting a new tmux server with no configuration file:
+#  $ tmux -Lfoo -f/dev/null start\; show -g
+# Or the default window options:
+#  $ tmux -Lfoo -f/dev/null start\; show -gw
+
+# solve the arrows mess when using vim in tmux
+# set -g default-terminal "xterm-256color"
+
+set -s default-terminal "screen-256color"
+# set -s terminal-overrides "*256col*:colors=256,xterm*:XT,xterm-termite:Tc"
+# setw -g xterm-keys on
+
+# use mouse to scroll the output page instead of the command history
+set -g terminal-overrides 'xterm*:smcup@:rmcup@'
+# fix the konsole/yakuake bug github#933
+set -as terminal-overrides ',*:indn@'
+
+# set the prefix from C-b to M-c
+set -g prefix C-b
+# reload the file using Prefix-r
+bind r source-file ~/.tmux.conf \; display "~/.tmux.conf reloaded!"
+
+# switch pane, default is with -r (repeated without prefix)
+bind Up select-pane -U
+bind k select-pane -U
+bind Down select-pane -D
+bind j select-pane -D
+bind Left select-pane -L
+bind h select-pane -L
+bind Right select-pane -R
+bind l select-pane -R
+
+bind = select-layout -E
+bind + select-layout tiled
+
+# choose the right pane using prefix-M-Num
+bind 1 select-pane -t 1
+bind 2 select-pane -t 2
+bind 3 select-pane -t 3
+bind 4 select-pane -t 4
+bind 5 select-pane -t 5
+bind 6 select-pane -t 6
+
+# choose the right window using prefix-M-Num
+# The default is prefix+Num
+bind M-1 select-window -t :=1
+bind M-2 select-window -t :=2
+bind M-3 select-window -t :=3
+bind M-4 select-window -t :=4
+bind M-5 select-window -t :=5
+bind M-6 select-window -t :=6
+bind M-7 select-window -t :=7
+bind M-8 select-window -t :=8
+bind M-9 select-window -t :=9
+
+# use M-c M-c to switch to last window
+bind M-c last-window
+# M-c t to kill-pane
+bind -r t kill-pane \; set -u pane-active-border-style
+# kill all other panes but the current one
+bind T confirm-before "kill-pane -a"
+# kill current window
+#bind -r x kill-window
+# kill all the other windows but the current one
+bind X confirm-before "kill-window -a"
+
+# Start Window Numbering at 1
+set -g base-index 1
+setw -g pane-base-index 1
+
+# Aggressive resize(don't know what this means)
+setw -g aggressive-resize on
+
+# prevoius/next-window
+bind -r M-x previous-window
+bind -r M-v next-window
+bind -r Tab next-window
+# bind -r C-Tab previous-window
+# or
+# bind -r M-x select-window -t :-
+# bind -r M-v select-window -t :+
+
+# Vertial split-window from current dir
+bind -r v split-window -p 50 -h -c "#{pane_current_path}" \; set -u pane-active-border-style
+bind -r '\' split-window -p 50 -h -c "#{pane_current_path}" \; set -u pane-active-border-style
+# Horizontal split-window from current dir
+bind -r h split-window -p 50 -c "#{pane_current_path}" \; set -u pane-active-border-style
+bind -r - split-window -p 50 -c "#{pane_current_path}" \; set -u pane-active-border-style
+# create new window #from the current dir
+bind c new-window # -c "#{pane_current_path}"
+
+# copy the text in terminal using the following method:(not need to go into the copy mode first)
+# hold Shift and using touchpad/mouse tmux kill-pane -aselect the text you want
+# press C-S-c at the same time to copy, the text will be filled into the X clipboard
+# C-S-v to paste
+
+# copy/paste between system clipboard and tmux
+# When in mouse mode, Shift-mouse to copy on select
+set -g mouse on
+# toggle mouse on/off
+bind m set -g mouse
+# prefix+[ first, select the content with mouse(hold) and then copy using M-w,
+# paste using C-y, using prefix+[ will also solve the problem that
+# selecting multiple lines with mouse selects contents cross panes.
+# To copy:
+#bind-key -n -t emacs-copy M-w copy-pipe "xclip -i -sel p -f | xclip -i -sel c "
+bind-key -n -Tcopy-mode M-w send -X copy-pipe "xclip -i -sel p -f | xclip -i -sel c "\; display-message "Copied"
+# To paste:
+bind-key -n C-y run "xclip -o | tmux load-buffer - ; tmux paste-buffer"
+
+bind M-s copy-mode
+bind-key -n -Tcopy-mode M-a send-keys -X page-up
+bind-key -n -Tcopy-mode M-z send-keys -X page-down
+
+# Use vi-style navigation in Copy mode (which is also scrollback mode)
+#setw -g mode-keys vi
+
+# scrollback limit
+#set-option -g history-limit 30000
+set -g history-limit 30000
+
+# Lower escape timing from 500ms to 50ms for quicker response to scroll-buffer access.
+set -s escape-time 50
+
+# Reduce the command delay time to something a bit shorter
+#set -sg escape-time 1
+# Extend the repeat interval for repeatable commands (e.g., resize-pane)
+#set -sg repeat-time 500
+
+# how long to show pane numbers when pressing M-c q
+set -g display-panes-time 2000  # (which is 2sec)
+
+# Automatically set window title to reflect the current program
+setw -g automatic-rename on
+# setw -g automatic-rename-format '{#T}'
+
+# renumber the windows if any of them is closed
+#set -g renumber-windows on
+
+# disable M-c C-z to suspend tmux
+unbind-key C-z
+# disable C-d to exit shell, this C-d happens when being first input to prompt
+unbind-key C-d
+
+# clear screen
+#bind -n C-l send-keys 'C-l'
+#unbind-key C-l
+#bind -n C-l send-keys 'C-l'
+
+# network speed in status line, ~/.local/bin/net-speed.sh
+# set update frequencey (default 15 seconds)
+set -g status-interval 1
+#set -g status-left '#(net-speed.sh wlp5s0)#[default]'
+# Set status bar
+set -g status-bg default # default->transparent
+set -g status-fg default # green
+set -g status-left "[#S#I#P:#{pane_height}x#{pane_width}] "
+# set -g status-right "\"#{=50:pane_current_path}\" %H:%M %a %m/%d"
+# check `man shrftime` for the meaning of %... and more
+# it seems the pane_current_path is not necessary
+#set -g status-right "\"#{=50:pane_current_path}\" %H:%M %a %d-%b"
+#set -g status-right "%H:%M %a %m/%d"
+# set -g status-right '#(speed_net) #[fg=red][#(tmux display-message -p "#{=50:pane_current_path}" | sed "s#$HOME#~#g")]#[default] <%H:%M %a %m/%d>'
+#set -g status-right '#[bg=green,fg=black]#(speed_net)#[default] #[fg=red][#(tmux display-message -p "#{=50:pane_current_path}" | sed "s#$HOME#~#g")]#[default] <%H:%M %a %m/%d>'
+# countdown and stopwatch in status line
+# in case there is already countdown or stopwatch running
+set -g status-right '#(~/.local/bin/ssh_ip)#(~/.local/bin/speed_net)<#[reverse,bold]%H:%M#[default] %Y-%m-%d %A>'
+# use prefix-p/P to toggle the stopwatch/countdown, if on, disable it, if off, enable it
+if-shell 'test $(pgrep timer | wc -l) -gt 0' "set -g status-left \"#[fg=red,blink,bold]#(~/.local/bin/timer)#[default][#S#I#P:#{pane_height}x#{pane_width}] \"" "set -g status-left \"[#S#I#P:#{pane_height}x#{pane_width}] \""
+bind p if-shell 'test $(pgrep timer | wc -l) -gt 0' "run 'pkill timer' \; set -g status-left \"[#S#I#P:#{pane_height}x#{pane_width}] \"" "set -g status-left  \"#[fg=red,blink,bold]#(~/.local/bin/timer)#[default][#S#I#P:#{pane_height}x#{pane_Width}] \""
+bind P if-shell 'test $(pgrep timer | wc -l) -gt 0' "run 'pkill timer' \; set -g status-left \"[#S#I#P:#{pane_height}x#{pane_width}] \"" "command-prompt -p 'Seconds to countdown? [60s]' \"set -g status-left '#[fg=red,blink,bold]#(~/.local/bin/timer -c %1)#[default][#S#I#P:#{pane_height}x#{pane_width}] '\""
+set -g status-right-length 200
+set -g status-left-length 100
+#set -g status-utf8 on
+# with the following line, the path in status bar and prompt is unnecessary
+set -g pane-border-status top
+# set-option -g pane-border-format "#{?pane_active,#[reverse],}#{pane_index}#[default] ""\"#(tmux display-message -p \"#{=50:pane_title}\" | sed \"s#$HOME#~#g\")\""
+# default of pane-border-format
+# set-option -g pane-border-format "#{?pane_active,#[reverse],}#{pane_index}#[default] ""\"#{pane_title}\""
+# set -g pane-border-format "#[reverse,bold]#(echo '#')#{pane_index}: #(~/.local/bin/pane-border-format.sh --path=#{pane_current_path})#[default]"
+set -g pane-border-format "#[reverse,bold]#(echo '#')#{pane_index}: #{s|$HOME|~|:pane_current_path}#[default] #(gitmux -q -fmt tmux #{pane_current_path})#[default]"
+
+
+# use prefix+z to max/restore the current pane
+# prefix+M-z to max the other one, unzoomed the window if it is already zoomed
+# hit again or prefix-left/right/down/up to unzoom
+bind z if-shell "[[ #{window_panes} -eq 1 || #{window_zoomed_flag} -eq 1 ]]" "resize-pane -Z ; set-option pane-active-border-style fg=red,bold" "resize-pane -Z ; set-option pane-active-border-style fg=green,bold,italics"
+bind M-z if-shell "[[ #{window_panes} -eq 1 || #{window_zoomed_flag} -eq 1 ]" "resize-pane -Z; set-option pane-active-border-style fg=red,bold" "last-pane ; resize-pane -Z; set-option pane-active-border-style fg=green,bold,italics"
+# set -g pane-active-border-style '#{?window_zoomed_flag,#[fg=green,bold,italics],#[fg=red,bold]}'
+if-shell "[[ #{window_zoomed_flag} -eq 1 ]]" "set -g pane-active-border-style fg=green,bold,italics" "set -g pane-active-border-style fg=red,bold"
+
+# Highlight active window
+setw -g window-status-current-style fg=red,bright
+# indentify activity in other windows
+setw -g monitor-activity on
+set -g visual-activity on
+setw -g window-status-activity-style bold,reverse,underscore
+#setw -g window-status-format "[#I#([ #{window_panes} -gt 1 ] && echo :#{window_panes})]:#{pane_current_command}#F"
+set -g window-status-format '#[fg=yellow]#I:#[fg=blue][#W]#[fg=yellow]#{pane_current_command}::#[fg=default]#(pwd="#{pane_current_path}"; echo ${pwd####*/})#F'
+set -g window-status-current-format '#[bg=yellow]#I:#[bg=default]#[fg=blue][#W]#[fg=default]#(pwd="#{pane_current_path}"; echo ${pwd####*/})#F'
+# bind s list-panes -a -F '#S:#I:#P-#{pane_height}x#{pane_width} "#{pane_title}" #{history_size}'
+
+# hiden and restore a pane
+# https://unix.stackexchange.com/a/506103/130234
+bind Z break-pane -d -n _hidden_pane
+bind ! join-pane -s $.1
+
+#bind w choose-tree -u
+#bind w choose-tree -u -W '#{window_index}(#{window_panes}): #{window_name} #{session_attached,yes,} #{pane_current_path} #F'
+#bind w choose-tree '#{window_index}(#{window_panes}): #{window_name} #{session_attached,yes,} #{pane_current_path} #F'
+# bind w choose-tree
+# default format of choose-tree
+# bind w choose-tree -F '#{?pane_format, #{pane_current_command} "#{pane_title}",#{?window_format,#{window_name}#{window_flags} (#{window_panes} panes)#{?#{==:#{window_panes},1}, "#{pane_title}",},#{session_windows} windows#{?session_grouped, (group ,}#{session_group}#{?session_grouped,),}#{?session_attached, (attached),}}}'
+bind w choose-tree -F '#{?pane_format, <#[fg=yellow]#{pane_tty}>#[default] #[fg=red]#{pane_current_command}#[default] "#{pane_title}",#{?window_format,#{window_name}#{window_flags} (#{window_panes} panes)#{?#{==:#{window_panes},1}, #[fg=yellow]"<#{pane_tty}>#[default] #{pane_title}",},#{session_windows} windows#{?session_grouped, (group ,}#{session_group}#{?session_grouped,),}#{?session_attached, (attached),}}}'
+
+set -g message-style fg=red,bg=default,bright
+set -g display-time 3000
+
+# scroll the screen of the other pane from the current pane
+bind -r M-PageDown last-pane \; send-keys "PageDown" \; last-pane
+bind -r M-PageUp last-pane \; send-keys "PageUp" \; last-pane
+bind -r M-Home last-pane \; send-keys "Up" \; last-pane
+bind -r M-End last-pane \; send-keys "Down" \; last-pane
+
+# default is 5 at the end, set them to C-Up/Down/Left/Right since prefix is M-c
+bind -r M-Up    resize-pane -U 2
+bind -r M-Down  resize-pane -D 2
+bind -r M-Left  resize-pane -L 2
+bind -r M-Right resize-pane -R 2
+# IC/DC = Insert/Delete
+bind-key -r IC   resize-pane -U 5
+bind-key -r DC   resize-pane -D 5
+bind-key -r Home resize-pane -L 5
+bind-key -r End  resize-pane -R 5
